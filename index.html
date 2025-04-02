@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html>
+
+	<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Page</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f9;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            color: #4a4a8d;
+            margin-bottom: 1rem;
+        }
+
+        .input-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+            max-width: 400px;
+        }
+
+        input {
+            width: 100%;
+            padding: 12px;
+            font-size: 1rem;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            outline: none;
+            transition: border-color 0.3s ease;
+        }
+
+        input:focus {
+            border-color: #4a4a8d;
+        }
+
+        button {
+            width: 100%;
+            padding: 12px;
+            font-size: 1rem;
+            background-color: #4a4a8d;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+        }
+
+        button:hover {
+            background-color: #3a3a7c;
+        }
+
+        button:active {
+            transform: scale(0.98);
+        }
+
+    </style>
+</head>
+<body>
+<div id="main-container">
+
+    <h1>Hello, Mr. Palacios</h1>
+    <div class="input-container">
+        <input id="txt" type="text" placeholder="Type your message here...">
+        <button id="myBtn">Send</button>
+	<br></br>
+        <button onclick="initializeHandshake()">Initialize Websocket Connection</button>
+    </div>
+</div>
+</body>
+
+<script	>
+
+function test() {
+    var request = new Request('https://127.0.0.1:9034/test_send', {
+        method: 'GET',
+        headers: new Headers({
+            'Accept': 'application/json',
+            'Content-Type': 'text/json'
+        })
+    });
+
+    fetch(request)
+    	.then((response)=> response.json())
+	.then((data)=> {
+		console.log(data['value']);
+	})
+    }
+
+    	async function open_microphone(ws){
+	      try {
+			let stream = await navigator.mediaDevices.getUserMedia({audio: true});
+			let chunks = [];
+			let mediaRecorder = new MediaRecorder(stream);
+			let sequence = 0;
+
+			mediaRecorder.ondataavailable = function (e) {
+			    chunks.push(e.data); 
+			    ws.send(e.data);
+			};
+			mediaRecorder.start(10); 
+
+		    } catch (error) {
+			console.error("Error accessing media devices:", error);
+		    }
+	}
+
+	function initializeHandshake(){
+
+		const ws = new WebSocket('wss://127.0.0.1:9034/websocket');
+		console.log(ws);
+		ws.onopen = () => {
+		  console.log('WebSocket connection established');
+//		  open_microphone(ws)
+		  
+
+		  document.getElementById("myBtn").addEventListener("click", function() {
+		  	  var txt =  document.getElementById('txt').value;
+			  console.log("Sending "+txt);
+			  ws.send(txt);
+			});
+		}
+
+		ws.onmessage = (event) => {
+		  console.log('Message from server:', event.data);
+		  const newParagraph = document.createElement('p');
+		  newParagraph.textContent = 'Some Client: > '+event.data;
+		let element = document.getElementById("main-container");
+		element.appendChild(newParagraph);
+
+		};
+
+		ws.onerror = (error) => {
+		  console.error('WebSocket error:', error);
+		};
+
+		ws.onclose = () => {
+		  console.log('WebSocket connection closed');
+		};
+
+	}
+
+</script>
+</html>
