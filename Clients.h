@@ -43,6 +43,8 @@ void InitializeSSL()
     
     
     }
+    
+    printf("Initialized SSL\n");
 }
 
 void DestroySSL()

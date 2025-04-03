@@ -74,10 +74,22 @@ int accept_client(){
 	return newfd;
 }
 
-SSL *encrypt_socket(int newfd, struct Client **clients, struct pollfd **pfds, int *fd_count){
-		SSL *cSSL = SSL_new(sslctx);
-		int ssl_set = SSL_set_fd(cSSL, newfd );
+void encrypt_client(int fd, SSL *cSSL){
+	for(int i=0; i<fd_count; i++){
+		if (clients[i].pfd.fd == fd){
+			printf("Found Client\n");
+			clients[i].ssl = cSSL;
+			break;
+		}
+	
+	}
 
+
+}
+int  encrypt_socket(int fd){
+	printf("Starting to encryot...\n");
+		SSL *cSSL = SSL_new(sslctx);
+		int ssl_set = SSL_set_fd(cSSL, fd);
 		int ssl_err = SSL_accept(cSSL);
 		if (ssl_err <= 0) {
 		    printf("ERROR\n");
@@ -86,14 +98,12 @@ SSL *encrypt_socket(int newfd, struct Client **clients, struct pollfd **pfds, in
 		    printf("SSL ERROR: %d\n", err);
 		    ERR_print_errors_fp(stderr);  
 		    ShutdownSSL(cSSL);
-		    close(newfd);
-		    return NULL;
+		    return ssl_err;
 		}else{
-			printf("FD %d Has been encrypted ssl_set: %d\n", newfd,ssl_set);
+			encrypt_client(fd, cSSL);
+			printf("Client %d Has been encrypted ssl_set: %d\n", fd,ssl_set);
+			return ssl_err; 
 		
 		}
-		return cSSL;
-//		(*clients)[*fd_count].pfd = (*pfds)[*fd_count];
-//		(*clients)[*fd_count].ssl = cSSL;
 }
 

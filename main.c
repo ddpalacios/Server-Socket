@@ -3,6 +3,20 @@
 #define PORT 9034
 #define BUFFER_SIZE 2056
 
+
+
+SSL *get_encrypted_socket(int fd){
+
+	for(int i=0; i<fd_count; i++){
+		if (clients[i].pfd.fd == fd){
+			return clients[i].ssl;  
+		
+		}
+	}
+
+}
+
+
 int get_ready_file_descriptor(){
 	for(int i=0; i<fd_count; i++){
 		if (pfds[i].revents & POLLIN){
@@ -12,9 +26,12 @@ int get_ready_file_descriptor(){
 }
 
 
-int main(int argc, char **argv){
-	int isEncrypted = *argv[1];
-	printf("%d\n", isEncrypted);
+int main(){
+	int isEncrypted = 1;
+	if (isEncrypted){
+		InitializeSSL();
+	
+	}
 
 	unsigned char *buf =  malloc(BUFFER_SIZE);
 	clients = malloc(sizeof(struct Client) * fd_size);
@@ -36,9 +53,22 @@ int main(int argc, char **argv){
 		
 		if (readyfd == listener_socket){
 			int newfd = accept_client();
+			if (isEncrypted){
+				int success = encrypt_socket(newfd);
+				if (success <=0 ){
+					del_from_pfds(newfd);
+				}
+			}
 		}else{
-			int nbytes = recv(readyfd, buf, BUFFER_SIZE, 0);	
+			int nbytes;
+			if (isEncrypted){
+				SSL *cSSL = get_encrypted_socket(readyfd);
+				nbytes = SSL_read(cSSL, buf, BUFFER_SIZE);
+			}else{
+				nbytes = recv(readyfd, buf, BUFFER_SIZE, 0);	
+			}
 			printf("Data Recieved from %d:\nTotal Bytes: %d\n", readyfd, nbytes);
+
 			if(nbytes == 0){
 				del_from_pfds(readyfd);
 			}else if (nbytes > 0){
@@ -51,7 +81,6 @@ int main(int argc, char **argv){
 }
 
 	/*
-	InitializeSSL();
 	int fd_size = 50;
 	int fd_count = 0;
 	unsigned char *buf =  malloc(BUFFER_SIZE);
