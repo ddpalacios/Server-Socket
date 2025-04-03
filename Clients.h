@@ -14,6 +14,8 @@
 
 
 SSL_CTX *sslctx;
+int fd_size = 50;
+int fd_count = 0;
 
 
 struct Client{
@@ -22,6 +24,8 @@ struct Client{
 
 };
 
+struct Client *clients;
+struct pollfd *pfds;
 void InitializeSSL()
 {
     SSL_load_error_strings();
