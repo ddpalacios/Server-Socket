@@ -95,7 +95,6 @@ int  decode_dataframe(unsigned char* buf, char message[]) {
 			message[i] = message_val;
 		    }
 		    message[payloadlength] = '\0';
-		    printf("Message: %s\n", message);
 		    return payloadlength;
 	    }
 

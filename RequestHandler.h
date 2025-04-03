@@ -5,23 +5,6 @@
 #include <openssl/evp.h>
 #include "HTMLReader.h"
 
-void trim(char *str) {
-    // Trim leading spaces and newlines
-    while (*str && (isspace((unsigned char)*str) || *str == '\n')) {
-        str++;
-    }
-
-    // Trim trailing spaces and newlines
-    char *end = str + strlen(str) - 1;
-    while (end > str && (isspace((unsigned char)*end) || *end == '\n')) {
-        end--;
-    }
-
-    // Null-terminate the string after trimming
-    *(end + 1) = '\0';
-}
-
-
 
 void get_header_value(const char *buf, const char *key, char *value, size_t value_size){
 	char *key_start = strstr(buf, key);
@@ -41,12 +24,12 @@ void get_header_value(const char *buf, const char *key, char *value, size_t valu
 	}
 }
 
-void process_get(char *buf,  int client_fd,SSL *cSSL){
+void process_get(char *buf,  SSL *cSSL){
 	char *start = buf + 4;
 	char *end = strchr(start, ' ');
 
 	if (strstr(buf, "/websocket")){
-		printf("\nClient %d Requested WebSocket Connection...\n\n", client_fd);
+		//printf("\nClient %d Requested WebSocket Connection...\n\n", client_fd);
 		char websocketKey[32];
 		get_header_value(buf, "Sec-WebSocket-Key", websocketKey, sizeof(websocketKey));
 		char *magicKey = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
@@ -64,13 +47,14 @@ void process_get(char *buf,  int client_fd,SSL *cSSL){
 			 "Sec-WebSocket-Accept: %s\r\n"
 			 "Access-Control-Allow-Origin: *\r\n"
 			 "\r\n", base64Hash);
-		printf("Sending handshake response to client %d...\n\n", client_fd);
+		//printf("Sending handshake response to client %d...\n\n", client_fd);
 		printf("%s\n", http_header);
 		SSL_write(cSSL,http_header,strlen(http_header));
 	}
 
 	if (end){
 		*end='\0';
+		printf("Route: %s\n", start);
 		if (strcmp(start, "/") ==0){
 			char *html_buffer = get_file_buffer("index.html");
 			int html_length = strlen(html_buffer);
