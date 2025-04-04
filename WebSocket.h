@@ -23,7 +23,51 @@ int is_dataframe(unsigned char *buf){
 	 } 
 }
 
-void send_dataframe_to_clients(unsigned char frame[], int message_length, struct pollfd **pfds, int fd_count, int listener_socket, struct Client **clients) {
+void send_dataframe_to_clients(int payload_length,  char *message) {
+	printf("%s\n", message);
+	unsigned char frame[2 + payload_length];
+	frame[0] = 0x81;
+	frame[1] =(unsigned char) payload_length;
+
+	int finVal = frame[0] & 0x80;
+	int mask = frame[1] & 0x80;
+	int opcode = frame[0] & 0x0F;
+	printf("2nd Byte: %d\n", frame[1]);
+	printf("mask: %d\n", mask);
+	printf("opcode: %d\n", opcode);
+	printf("finVal: %d\n", finVal);
+
+	memcpy(frame + 2, message, payload_length);
+
+    for (int i = 0; i < fd_count; i++) {
+        if (clients[i].pfd.fd == listener_socket) {
+            continue;
+        }
+	SSL *encrypted_socket = clients[i].ssl;
+	 int bytes_sent = SSL_write(encrypted_socket,frame, payload_length +2);
+        if (bytes_sent < 0) {
+            perror("Error sending data to client");
+        }else{
+		printf("Data Sent to Client %d! bytes sent: %d\n", clients[i].pfd.fd, bytes_sent);
+	}
+
+    }
+
+}
+	/*
+
+	int finVal = frame[0] & 0x80;
+	int opcode = frame[0] & 0x0F;
+	int mask = frame[1] & 0x80;
+	payload_length = frame[1] & 0x7F;
+	
+	printf("SENDING DATAFRAME:\n");
+	printf("finVal %d, opcode: %d, mask: %d\n",finVal,opcode,mask);
+	printf("payloadLength: %d\n",payload_length);
+
+
+
+
     for (int i = 0; i < fd_count; i++) {
         if ((*clients)[i].pfd.fd == listener_socket) {
             continue;
@@ -38,7 +82,7 @@ void send_dataframe_to_clients(unsigned char frame[], int message_length, struct
             perror("Error sending data to client");
         }
     }
-}
+    */
 
 void convert_to_dataframe(char message[],unsigned char frame[], int payload_length){
     printf("PayLoad Length to send: %d\n", payload_length);

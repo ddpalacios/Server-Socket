@@ -135,6 +135,7 @@ function test() {
 		}
 
 		ws.onmessage = (event) => {
+
 		  console.log('Message from server:', event.data);
 		  const newParagraph = document.createElement('p');
 		  newParagraph.textContent = 'Some Client: > '+event.data;
